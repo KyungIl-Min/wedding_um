@@ -39,7 +39,7 @@ const CONFIG = {
   },
 
   wedding: {
-    date: "2025-08-30",        // YYYY-MM-DD
+    date: "2026-08-30",        // YYYY-MM-DD
     time: "11:30",             // HH:MM (24시간)
     dayOfWeek: "일요일",
     venue: "용인 IT 컨벤션",
