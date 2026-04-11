@@ -19,38 +19,29 @@
   let storyImagesData = [];
   let viewerImages = [];
 
+  // [속도 개선] 기존: 1번→2번→3번 순차 탐색 (27장이면 27번 왕복 대기)
+  // 변경: 1~50번을 한꺼번에 병렬 요청 → 결과를 번호 순서대로 정렬
+  // 연속 3번 실패 로직 대신, 모든 요청을 동시에 보내고 성공한 것만 추려냄
   function loadImagesFromFolder(folder, maxAttempts = 50) {
-    return new Promise(resolve => {
-      const images = [];
-      let current = 1;
-      let consecutiveFails = 0;
-
-      function tryNext() {
-        if (current > maxAttempts || consecutiveFails >= 3) {
-          resolve(images);
-          return;
-        }
-        const img = new Image();
-        const path = `images/${folder}/${current}.jpg`;
-
-        img.onload = function () {
-          images.push(path);
-          consecutiveFails = 0;
-          current++;
-          tryNext();
-        };
-
-        img.onerror = function () {
-          consecutiveFails++;
-          current++;
-          tryNext();
-        };
-
-        img.src = path;
-      }
-
-      tryNext();
-    });
+    const promises = [];
+    for (let i = 1; i <= maxAttempts; i++) {
+      const path = `images/${folder}/${i}.jpg`;
+      const index = i;
+      promises.push(
+        new Promise(resolve => {
+          const img = new Image();
+          img.onload = () => resolve({ index, path });
+          img.onerror = () => resolve(null);
+          img.src = path;
+        })
+      );
+    }
+    return Promise.all(promises).then(results =>
+      results
+        .filter(Boolean)
+        .sort((a, b) => a.index - b.index)
+        .map(r => r.path)
+    );
   }
 
   /* ── Meta Tags ── */
@@ -425,6 +416,8 @@
   function closeViewer() {
     const viewer = $('#viewer');
     if (!viewer) return;
+    // aria-hidden 경고 방지: 닫기 전에 포커스를 viewer 바깥으로 이동
+    document.body.focus();
     viewer.classList.remove('is-active');
     viewer.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
