@@ -612,12 +612,13 @@ a {
   overflow: hidden;
   box-shadow: var(--shadow-card);
   background: var(--white);
+  cursor: pointer;
 }
 
 .story__img-card img {
   width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
+  height: auto;
+  object-fit: contain;
 }
 
 .story__img-caption {
@@ -709,17 +710,13 @@ a {
   border: 1px solid rgba(183, 110, 121, 0.08);
 }
 
-/* .location__map-wrap img {
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  object-fit: cover;
-} */
 .location__map-wrap img {
   width: 100%;
   height: auto;
   display: block;
   object-fit: contain;
 }
+
 .location__buttons {
   display: flex;
   gap: 8px;
@@ -956,11 +953,12 @@ a {
 
 .viewer__slide img {
   max-width: 100%;
-  max-height: 100%;
+  max-height: 85vh;
   object-fit: contain;
   border-radius: 4px;
   user-select: none;
   -webkit-user-drag: none;
+  display: block;
 }
 
 .viewer__nav {
@@ -1173,7 +1171,9 @@ a {
   }
 
   .story__img-card img {
-    aspect-ratio: 3 / 4;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
   }
 }
 
@@ -1201,58 +1201,62 @@ a {
     max-width: 500px;
   }
 }
-  /* ===== 섹션 간 공백 통일: 스토리 ~ 계좌번호 ===== */
-  .greeting,
-  .calendar-section,
-  .story,
-  .gallery,
-  .location,
-  .account {
-    padding-top: 24px !important;
-    padding-bottom: 24px !important;
-  }
 
-  /* account는 원래 padding-bottom: 40px 이라 같이 덮어쓰기 */
-  .account {
-    padding-bottom: 24px !important;
-  }
+/* ===== 섹션 간 공백 통일: 스토리 ~ 계좌번호 ===== */
+.greeting,
+.calendar-section,
+.story,
+.gallery,
+.location,
+.account {
+  padding-top: 24px !important;
+  padding-bottom: 24px !important;
+}
 
-  /* 제목이 비어 있는 섹션은 제목 높이까지 없애기 */
-  .section__title:empty {
-    display: none !important;
-    margin: 0 !important;
-  }
-  .account__share {
+/* account는 원래 padding-bottom: 40px 이라 같이 덮어쓰기 */
+.account {
+  padding-bottom: 24px !important;
+}
+
+/* 제목이 비어 있는 섹션은 제목 높이까지 없애기 */
+.section__title:empty {
+  display: none !important;
+  margin: 0 !important;
+}
+
+.account__share {
   margin-top: 24px;
   display: flex;
   justify-content: center;
-  }
+}
 
-  .account__share .btn {
+.account__share .btn {
   min-width: 220px;
   justify-content: center;
   text-align: center;
-  }
-  html,
-  body {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-  .invitation {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden;
-  }
+}
 
-  .section,
-  .hero,
-  .greeting,
-  .calendar-section,
-  .story,
-  .gallery,
-  .location,
-  .account,
-  .footer {
-    overflow-x: clip;
-  }
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.invitation {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.section,
+.hero,
+.greeting,
+.calendar-section,
+.story,
+.gallery,
+.location,
+.account,
+.footer {
+  overflow-x: clip;
+}

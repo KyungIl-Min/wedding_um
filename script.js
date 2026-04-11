@@ -15,78 +15,71 @@
   }
 
   /* ── Image Auto-Detection ── */
-  // Discovered images stored here for use across functions
   let galleryImages = [];
+  let storyImagesData = [];
+  let viewerImages = [];
 
   function loadImagesFromFolder(folder, maxAttempts = 50) {
     return new Promise(resolve => {
-        const images = [];
-        let current = 1;
-        let consecutiveFails = 0;
+      const images = [];
+      let current = 1;
+      let consecutiveFails = 0;
 
-        function tryNext() {
-            if (current > maxAttempts || consecutiveFails >= 3) {
-                resolve(images);
-                return;
-            }
-            const img = new Image();
-            const path = `images/${folder}/${current}.jpg`;
-            img.onload = function() {
-                images.push(path);
-                consecutiveFails = 0;
-                current++;
-                tryNext();
-            };
-            img.onerror = function() {
-                consecutiveFails++;
-                current++;
-                tryNext();
-            };
-            img.src = path;
+      function tryNext() {
+        if (current > maxAttempts || consecutiveFails >= 3) {
+          resolve(images);
+          return;
         }
+        const img = new Image();
+        const path = `images/${folder}/${current}.jpg`;
 
-        tryNext();
+        img.onload = function () {
+          images.push(path);
+          consecutiveFails = 0;
+          current++;
+          tryNext();
+        };
+
+        img.onerror = function () {
+          consecutiveFails++;
+          current++;
+          tryNext();
+        };
+
+        img.src = path;
+      }
+
+      tryNext();
     });
   }
 
   /* ── Meta Tags ── */
-  // function initMeta() {
-  //   document.title = CONFIG.meta.title;
-  //   const t = $('#og-title');
-  //   const d = $('#og-description');
-  //   const i = $('#og-image');
-  //   if (t) t.setAttribute('content', CONFIG.meta.title);
-  //   if (d) d.setAttribute('content', CONFIG.meta.description);
-  //   if (i) i.setAttribute('content', 'images/og/1.jpg');
-  //   const pt = $('#page-title');
-  //   if (pt) pt.textContent = CONFIG.meta.title;
-  // }
   function initMeta() {
     document.title = CONFIG.meta.title;
     const pt = $('#page-title');
     if (pt) pt.textContent = CONFIG.meta.title;
   }
+
   /* ── Curtain ── */
   function initCurtain() {
     const curtain = $('#curtain');
 
-    // If useCurtain is false, skip the curtain entirely
     if (CONFIG.useCurtain === false) {
       if (curtain) {
         curtain.style.display = 'none';
       }
-      // Start petals immediately since there's no curtain to open
       initPetals();
       return;
     }
 
-    // Default behaviour (useCurtain is true or undefined for backwards compat)
     const names = $('#curtain-names');
     const btn = $('#curtain-open');
+
     if (names) {
       names.textContent =
         CONFIG.groom.fullName + ' & ' + CONFIG.bride.fullName;
     }
+
     if (btn) {
       btn.addEventListener('click', () => {
         curtain.classList.add('is-open');
@@ -95,6 +88,7 @@
         initPetals();
       });
     }
+
     document.body.style.overflow = 'hidden';
   }
 
@@ -147,6 +141,7 @@
       const hEl = $('#cd-hours');
       const mEl = $('#cd-minutes');
       const sEl = $('#cd-seconds');
+
       if (dEl) dEl.textContent = days;
       if (hEl) hEl.textContent = padZero(hours);
       if (mEl) mEl.textContent = padZero(minutes);
@@ -163,7 +158,7 @@
     const text = $('#greeting-text');
     const parents = $('#greeting-parents');
 
-    if (title) title.textContent = CONFIG.greeting.title;
+    if (title) title.textContent = CONFIG.greeting.title || '';
     if (text) text.textContent = CONFIG.greeting.content;
 
     if (parents) {
@@ -179,7 +174,7 @@
       parents.innerHTML = `
         <span class="parent-line">
           ${makeName(g.father, g.fatherDeceased)} &middot; ${makeName(g.mother, g.motherDeceased)}
-          <em>의 ${g.lastName === g.father?.charAt(0) ? '아들' : '아들'}</em> <strong>${g.name}</strong>
+          <em>의 아들</em> <strong>${g.name}</strong>
         </span>
         <span class="parent-dot">&amp;</span>
         <span class="parent-line">
@@ -215,14 +210,15 @@
     for (let i = 0; i < startDow; i++) {
       html += '<span class="calendar__day is-empty"></span>';
     }
+
     for (let day = 1; day <= lastDay; day++) {
       const cls = day === d ? ' is-today' : '';
       html += `<span class="calendar__day${cls}">${day}</span>`;
     }
+
     html += '</div>';
     el.innerHTML = html;
 
-    // Google Calendar
     const gBtn = $('#btn-google-cal');
     if (gBtn) {
       gBtn.addEventListener('click', () => {
@@ -242,7 +238,6 @@
       });
     }
 
-    // Apple Calendar (.ics)
     const iBtn = $('#btn-ics-cal');
     if (iBtn) {
       iBtn.addEventListener('click', () => {
@@ -276,38 +271,7 @@
     }
   }
 
-  /* ── Story (async — waits for image discovery) ── */
-  // async function initStory() {
-  //   const title = $('#story-title');
-  //   const text = $('#story-text');
-  //   const container = $('#story-images');
-
-  //   if (title) title.textContent = CONFIG.story.title;
-  //   if (text) text.textContent = CONFIG.story.content;
-
-  //   if (!container) return;
-
-  //   // Show loading placeholder
-  //   container.innerHTML = '<div class="section-loading"><span class="section-loading__dot"></span><span class="section-loading__dot"></span><span class="section-loading__dot"></span></div>';
-
-  //   const storyImages = await loadImagesFromFolder('story');
-
-  //   if (storyImages.length > 0) {
-  //     container.innerHTML = storyImages
-  //       .map(
-  //         (src) => `
-  //       <div class="story__img-card anim-scale-target">
-  //         <img src="${src}" alt="우리의 이야기" loading="lazy" />
-  //       </div>
-  //     `
-  //       )
-  //       .join('');
-  //     // Re-observe new elements for scroll animations
-  //     observeNewElements(container);
-  //   } else {
-  //     container.innerHTML = '';
-  //   }
-  // }
+  /* ── Story ── */
   async function initStory() {
     const title = $('#story-title');
     const text = $('#story-text');
@@ -325,24 +289,31 @@
     container.innerHTML =
       '<div class="section-loading"><span class="section-loading__dot"></span><span class="section-loading__dot"></span><span class="section-loading__dot"></span></div>';
 
-    const storyImages = await loadImagesFromFolder('story');
+    storyImagesData = await loadImagesFromFolder('story');
 
-    // 텍스트도 없고 이미지도 없으면 섹션 전체 숨김
-    if (!hasStoryText && storyImages.length === 0) {
+    if (!hasStoryText && storyImagesData.length === 0) {
       if (section) section.style.display = 'none';
       return;
     }
 
-    if (storyImages.length > 0) {
-      container.innerHTML = storyImages
+    if (storyImagesData.length > 0) {
+      container.innerHTML = storyImagesData
         .map(
-          (src) => `
-          <div class="story__img-card anim-scale-target">
-            <img src="${src}" alt="우리의 이야기" loading="lazy" />
+          (src, i) => `
+          <div class="story__img-card anim-scale-target" data-index="${i}">
+            <img src="${src}" alt="우리의 이야기 ${i + 1}" loading="lazy" />
           </div>
           `
         )
         .join('');
+
+      container.addEventListener('click', (e) => {
+        const item = e.target.closest('.story__img-card');
+        if (item) {
+          viewerImages = storyImagesData;
+          openViewer(+item.dataset.index);
+        }
+      });
 
       observeNewElements(container);
     } else {
@@ -350,19 +321,17 @@
     }
   }
 
-  /* ── Gallery (async — waits for image discovery) ── */
+  /* ── Gallery ── */
   async function initGallery() {
     const grid = $('#gallery-grid');
     const section = $('#gallery');
     if (!grid) return;
 
-    // Show loading placeholder
     grid.innerHTML = '<div class="section-loading"><span class="section-loading__dot"></span><span class="section-loading__dot"></span><span class="section-loading__dot"></span></div>';
 
     galleryImages = await loadImagesFromFolder('gallery');
 
     if (galleryImages.length === 0) {
-      // Hide entire gallery section if no images found
       if (section) section.style.display = 'none';
       return;
     }
@@ -380,11 +349,11 @@
     grid.addEventListener('click', (e) => {
       const item = e.target.closest('.gallery__item');
       if (item) {
+        viewerImages = galleryImages;
         openViewer(+item.dataset.index);
       }
     });
 
-    // Re-observe new elements for scroll animations
     observeNewElements(grid);
   }
 
@@ -398,9 +367,9 @@
     viewerIdx = index;
     const viewer = $('#viewer');
     const track = $('#viewer-track');
-    if (!viewer || !track || galleryImages.length === 0) return;
+    if (!viewer || !track || viewerImages.length === 0) return;
 
-    track.innerHTML = galleryImages
+    track.innerHTML = viewerImages
       .map(
         (src) => `
       <div class="viewer__slide">
@@ -427,8 +396,9 @@
   function goToSlide(idx, animate = true) {
     const track = $('#viewer-track');
     const counter = $('#viewer-counter');
-    const total = galleryImages.length;
+    const total = viewerImages.length;
     if (total === 0) return;
+
     if (idx < 0) idx = 0;
     if (idx >= total) idx = total - 1;
     viewerIdx = idx;
@@ -437,6 +407,7 @@
       track.style.transition = animate ? 'transform 0.3s ease' : 'none';
       track.style.transform = `translateX(-${idx * 100}%)`;
     }
+
     if (counter) {
       counter.textContent = `${idx + 1} / ${total}`;
     }
@@ -451,7 +422,6 @@
     $('#viewer-prev')?.addEventListener('click', () => goToSlide(viewerIdx - 1));
     $('#viewer-next')?.addEventListener('click', () => goToSlide(viewerIdx + 1));
 
-    // Keyboard
     document.addEventListener('keydown', (e) => {
       if (!viewer.classList.contains('is-active')) return;
       if (e.key === 'Escape') closeViewer();
@@ -459,7 +429,6 @@
       if (e.key === 'ArrowRight') goToSlide(viewerIdx + 1);
     });
 
-    // Touch/Swipe
     const track = $('#viewer-track');
     if (!track) return;
 
@@ -503,6 +472,7 @@
     if (venue) venue.textContent = w.venue;
     if (hall) hall.textContent = w.hall;
     if (addr) addr.textContent = w.address;
+
     if (tel) {
       if (w.tel) {
         tel.textContent = `Tel. ${w.tel}`;
@@ -511,6 +481,7 @@
         tel.style.display = 'none';
       }
     }
+
     if (mapImg) mapImg.src = 'images/location/1.jpg';
 
     const kakao = $('#btn-kakao-map');
@@ -538,7 +509,6 @@
       brideBody.innerHTML = renderAccounts(CONFIG.accounts.bride);
     }
 
-    // Accordion toggle
     $$('.accordion__toggle').forEach((btn) => {
       btn.addEventListener('click', () => {
         const acc = btn.closest('.accordion');
@@ -546,7 +516,6 @@
       });
     });
 
-    // Copy account
     document.addEventListener('click', (e) => {
       const copyBtn = e.target.closest('.account-item__copy');
       if (copyBtn) {
@@ -577,6 +546,7 @@
 
   /* ── Toast ── */
   let toastTimer = null;
+
   function showToast(msg) {
     const toast = $('#toast');
     if (!toast) return;
@@ -617,7 +587,7 @@
     document.body.removeChild(ta);
   }
 
-  /* ── Scroll Animations (IntersectionObserver) ── */
+  /* ── Scroll Animations ── */
   let scrollObserver = null;
 
   function initScrollAnimations() {
@@ -639,7 +609,6 @@
     targets.forEach((el) => scrollObserver.observe(el));
   }
 
-  // Re-observe dynamically added elements after async image loading
   function observeNewElements(container) {
     if (!scrollObserver) return;
     const targets = $$('.gallery__item, .story__img-card', container);
@@ -691,7 +660,6 @@
       ctx.globalAlpha = p.opacity;
       ctx.fillStyle = p.color;
 
-      // Petal shape
       ctx.beginPath();
       const s = p.size;
       ctx.moveTo(0, 0);
@@ -730,35 +698,7 @@
     animate();
   }
 
-  /* ── Init ── */
-  async function init() {
-    // Synchronous inits (no image dependency)
-    initMeta();
-    initCurtain();
-    initHero();
-    initCountdown();
-    initGreeting();
-    initCalendar();
-    initViewer();
-    initLocation();
-    initAccount();
-    initKakaoShare();
-
-    // Delay scroll animations so they don't fire during curtain
-    setTimeout(initScrollAnimations, 200);
-
-    // Async inits (discover images, then render)
-    await Promise.all([
-      initStory(),
-      initGallery(),
-    ]);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  /* ── Kakao Share ── */
   function initKakaoShare() {
     const btn = $('#btn-kakao-share');
     const share = CONFIG.kakaoShare;
@@ -810,5 +750,32 @@
         alert('카카오톡 공유 실행 중 문제가 발생했습니다. 도메인 설정과 링크 설정을 확인해주세요.');
       }
     });
+  }
+
+  /* ── Init ── */
+  async function init() {
+    initMeta();
+    initCurtain();
+    initHero();
+    initCountdown();
+    initGreeting();
+    initCalendar();
+    initViewer();
+    initLocation();
+    initAccount();
+    initKakaoShare();
+
+    setTimeout(initScrollAnimations, 200);
+
+    await Promise.all([
+      initStory(),
+      initGallery(),
+    ]);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
 })();

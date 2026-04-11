@@ -9,13 +9,13 @@
  *    images/story/1.jpg ...  — 스토리 사진 (자동 감지)
  *    images/gallery/1.jpg ...— 갤러리 사진 (자동 감지)
  *    images/location/1.jpg   — 오시는 길 사진 (1장)
- *    images/og/1.jpg         — OG 공유 썸네일 (1장)
+ *    images/og/wedding_main.jpg — OG 공유 썸네일 (1장)
  * ============================================
  */
 
 const CONFIG = {
   // ── 초대장 열기 ──
-  useCurtain: true,  // 초대장 열기 화면 사용 여부 (true: 사용, false: 바로 본문 표시)
+  useCurtain: true,
 
   // ── 메인 (히어로) ──
   groom: {
@@ -24,7 +24,7 @@ const CONFIG = {
     fullName: "민경일",
     father: "민현기",
     mother: "조한임",
-    fatherDeceased: false, // 故인이면 true
+    fatherDeceased: false,
     motherDeceased: false,
   },
 
@@ -39,8 +39,8 @@ const CONFIG = {
   },
 
   wedding: {
-    date: "2026-08-30",        // YYYY-MM-DD
-    time: "11:30",             // HH:MM (24시간)
+    date: "2026-08-30",
+    time: "11:30",
     dayOfWeek: "일요일",
     venue: "용인 IT 컨벤션",
     hall: "그레이스 홀",
@@ -53,25 +53,20 @@ const CONFIG = {
 
   // ── 인사말 ──
   greeting: {
-    // title: "소중한 분들을 초대합니다",
     content:
       "있는 그대로 사랑하고 서로의 존재에 감사하며\n곁에 있을 때 가장 나다운 모습이 되게 하는 사람과\n모든 계절을 함께 하고자 합니다.\n그 시작의 자리에\n늘 곁에서 아껴주셨던 소중한 분들을 모십니다.",
   },
 
   // ── 우리의 이야기 ──
   story: {
-    // title: "우리의 이야기",
     content:
       "많은 것을 알기를\n꿈꾸지 않는다\n\n다만 지금, 여기\n내 앞에서 웃고 있는 너\n\n그것이 내가 아는 세상의\n전부이기를 바란다.\n\n-나태주 '소망'-",
   },
 
-  // ── 오시는 길 ──
-  // (mapLinks는 wedding 객체 내에 포함)
-
   // ── 마음 전하실 곳 ──
   accounts: {
     groom: [
-      { role: "신랑", name: "면경일", bank: "케이뱅크", number: "110-191-160134" },
+      { role: "신랑", name: "민경일", bank: "케이뱅크", number: "110-191-160134" },
     ],
     bride: [
       { role: "신부", name: "박유민", bank: "하나은행", number: "345-910300-34407" },
@@ -81,7 +76,6 @@ const CONFIG = {
 
   // ── 링크 공유 시 나타나는 문구 ──
   kakaoShare: {
-    // Kakao Developers 앱키 (JavaScript 키)
     appKey: "586d4379556da1711fc8ab66d70d51aa",
     title: "민경일 ♥ 박유민 결혼합니다",
     description: "2026년 8월 30일 일요일 오전 11시 30분\n용인 IT 컨벤션 그레이스 홀",
@@ -93,5 +87,4 @@ const CONFIG = {
     title: "민경일 ♥ 박유민 결혼합니다",
     description: "2026년 8월 30일 일요일 오전 11시 30분\n용인 IT 컨벤션 그레이스 홀",
   },
-  
 };
