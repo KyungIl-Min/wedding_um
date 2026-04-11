@@ -364,10 +364,13 @@ a {
   pointer-events: none;
 }
 
+/* ── [수정 3번] Hero 사진: aspect-ratio 고정 제거 → 사진 원본 비율 그대로 표시 ── */
 .hero__photo-wrap img {
   width: 100%;
-  aspect-ratio: 3 / 4;
-  object-fit: cover;
+  height: auto;         /* 원본 비율 유지 */
+  aspect-ratio: unset;  /* 기존 3/4 고정 비율 제거 */
+  object-fit: contain;  /* 잘리지 않게 전체 표시 */
+  display: block;
 }
 
 .hero__info {
@@ -877,6 +880,11 @@ a {
 }
 
 /* ── Photo Viewer Modal ── */
+/*
+ * [버그 수정] viewer__track: overflow hidden 유지하되
+ * 내부 슬라이드는 absolute 배치 + vw 단위 translate로 이동하므로
+ * track 자체가 flex/transform할 필요가 없음.
+ */
 .viewer {
   position: fixed;
   inset: 0;
@@ -936,21 +944,10 @@ a {
   z-index: 2;
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  touch-action: pan-y;
+  overflow: hidden; /* 슬라이드 영역 밖으로 나가지 않게 */
 }
 
-.viewer__slide {
-  min-width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 16px;
-}
-
+/* viewer__slide는 script.js에서 inline style로 position:absolute + translateX(N*100vw) 처리 */
 .viewer__slide img {
   max-width: 100%;
   max-height: 85vh;
@@ -1135,8 +1132,12 @@ a {
     padding: 80px 40px;
   }
 
+  /* [수정 3번] 태블릿에서도 원본 비율 유지 */
   .hero__photo-wrap img {
-    aspect-ratio: 3 / 3.5;
+    width: 100%;
+    height: auto;
+    aspect-ratio: unset;
+    object-fit: contain;
   }
 
   .floral-frame {

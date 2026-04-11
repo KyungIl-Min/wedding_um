@@ -358,26 +358,63 @@
   }
 
   /* ── Photo Viewer ── */
+  /*
+   * [버그 수정] 핵심 문제:
+   * 기존 코드는 track에 transform: translateX(-N*100%)를 적용했는데,
+   * track의 width가 뷰어 전체 width와 같아서 각 slide의 min-width:100%가
+   * track 기준으로 계산되어 슬라이드 간 이동이 제대로 동작하지 않았음.
+   * → 각 slide를 절대 위치(position:absolute)로 배치하고
+   *   window.innerWidth를 기준으로 픽셀 단위 translate 적용으로 수정.
+   */
   let viewerIdx = 0;
   let touchStartX = 0;
   let touchDeltaX = 0;
   let isSwiping = false;
 
-  function openViewer(index) {
-    viewerIdx = index;
-    const viewer = $('#viewer');
+  function buildViewerSlides() {
     const track = $('#viewer-track');
-    if (!viewer || !track || viewerImages.length === 0) return;
+    if (!track) return;
+
+    // track을 relative 컨테이너로 설정
+    track.style.position = 'relative';
+    track.style.width = '100%';
+    track.style.height = '100%';
 
     track.innerHTML = viewerImages
       .map(
-        (src) => `
-      <div class="viewer__slide">
-        <img src="${src}" alt="" loading="lazy" />
+        (src, i) => `
+      <div class="viewer__slide" data-slide="${i}" style="
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 16px;
+        transform: translateX(${i * 100}vw);
+        will-change: transform;
+      ">
+        <img src="${src}" alt="" loading="lazy" style="
+          max-width: 100%;
+          max-height: 85vh;
+          object-fit: contain;
+          border-radius: 4px;
+          user-select: none;
+          -webkit-user-drag: none;
+          display: block;
+        " />
       </div>
     `
       )
       .join('');
+  }
+
+  function openViewer(index) {
+    viewerIdx = index;
+    const viewer = $('#viewer');
+    if (!viewer || viewerImages.length === 0) return;
+
+    buildViewerSlides();
 
     viewer.classList.add('is-active');
     viewer.setAttribute('aria-hidden', 'false');
@@ -397,16 +434,18 @@
     const track = $('#viewer-track');
     const counter = $('#viewer-counter');
     const total = viewerImages.length;
-    if (total === 0) return;
+    if (total === 0 || !track) return;
 
     if (idx < 0) idx = 0;
     if (idx >= total) idx = total - 1;
     viewerIdx = idx;
 
-    if (track) {
-      track.style.transition = animate ? 'transform 0.3s ease' : 'none';
-      track.style.transform = `translateX(-${idx * 100}%)`;
-    }
+    // 각 슬라이드를 개별적으로 이동
+    const slides = track.querySelectorAll('.viewer__slide');
+    slides.forEach((slide, i) => {
+      slide.style.transition = animate ? 'transform 0.3s ease' : 'none';
+      slide.style.transform = `translateX(${(i - idx) * 100}vw)`;
+    });
 
     if (counter) {
       counter.textContent = `${idx + 1} / ${total}`;
@@ -436,14 +475,19 @@
       touchStartX = e.touches[0].clientX;
       touchDeltaX = 0;
       isSwiping = true;
-      track.style.transition = 'none';
+      // 터치 중에는 transition 제거
+      const slides = track.querySelectorAll('.viewer__slide');
+      slides.forEach(s => s.style.transition = 'none');
     }, { passive: true });
 
     track.addEventListener('touchmove', (e) => {
       if (!isSwiping) return;
       touchDeltaX = e.touches[0].clientX - touchStartX;
-      const offset = -(viewerIdx * window.innerWidth) + touchDeltaX;
-      track.style.transform = `translateX(${offset}px)`;
+      const slides = track.querySelectorAll('.viewer__slide');
+      slides.forEach((slide, i) => {
+        const baseOffset = (i - viewerIdx) * window.innerWidth;
+        slide.style.transform = `translateX(${baseOffset + touchDeltaX}px)`;
+      });
     }, { passive: true });
 
     track.addEventListener('touchend', () => {
@@ -591,6 +635,7 @@
   let scrollObserver = null;
 
   function initScrollAnimations() {
+    // [버그 수정] 갤러리/스토리 로딩 완료 후에 호출되므로 타이밍 문제 없음
     const targets = $$('.anim-target, .gallery__item, .story__img-card');
     if (!targets.length) return;
 
@@ -765,12 +810,15 @@
     initAccount();
     initKakaoShare();
 
-    setTimeout(initScrollAnimations, 200);
-
+    // [버그 수정] 갤러리·스토리 로딩이 완전히 끝난 후 스크롤 애니메이션 초기화
+    // 기존: setTimeout(initScrollAnimations, 200) — 로딩 완료 전에 실행될 수 있어 버그
     await Promise.all([
       initStory(),
       initGallery(),
     ]);
+
+    // 모든 이미지 로딩 완료 후 애니메이션 관찰 시작
+    initScrollAnimations();
   }
 
   if (document.readyState === 'loading') {
