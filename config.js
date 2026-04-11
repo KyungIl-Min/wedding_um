@@ -85,7 +85,7 @@ const CONFIG = {
     appKey: "586d4379556da1711fc8ab66d70d51aa",
     title: "민경일 ♥ 박유민 결혼합니다",
     description: "2026년 8월 30일 일요일 오전 11시 30분\n용인 IT 컨벤션 그레이스 홀",
-    imageUrl: "https://kyungil-min.github.io/wedding_um/images/og/wedding_v2.jpg",
+    imageUrl: "https://kyungil-min.github.io/wedding_um/images/og/wedding_main.jpg",
     webUrl: "https://kyungil-min.github.io/wedding_um/",
   },
 
