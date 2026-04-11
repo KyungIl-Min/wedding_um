@@ -50,18 +50,22 @@
   }
 
   /* ── Meta Tags ── */
+  // function initMeta() {
+  //   document.title = CONFIG.meta.title;
+  //   const t = $('#og-title');
+  //   const d = $('#og-description');
+  //   const i = $('#og-image');
+  //   if (t) t.setAttribute('content', CONFIG.meta.title);
+  //   if (d) d.setAttribute('content', CONFIG.meta.description);
+  //   if (i) i.setAttribute('content', 'images/og/1.jpg');
+  //   const pt = $('#page-title');
+  //   if (pt) pt.textContent = CONFIG.meta.title;
+  // }
   function initMeta() {
     document.title = CONFIG.meta.title;
-    const t = $('#og-title');
-    const d = $('#og-description');
-    const i = $('#og-image');
-    if (t) t.setAttribute('content', CONFIG.meta.title);
-    if (d) d.setAttribute('content', CONFIG.meta.description);
-    if (i) i.setAttribute('content', 'images/og/1.jpg');
     const pt = $('#page-title');
     if (pt) pt.textContent = CONFIG.meta.title;
   }
-
   /* ── Curtain ── */
   function initCurtain() {
     const curtain = $('#curtain');
