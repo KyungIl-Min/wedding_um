@@ -1,6 +1,6 @@
 /* ============================================
    Romantic Flower - Mobile Wedding Invitation
-   script.js
+   script.js  (성능 최적화 버전)
    ============================================ */
 
 (function () {
@@ -14,15 +14,21 @@
     return String(n).padStart(2, '0');
   }
 
-  /* ── Image Auto-Detection ── */
-  let galleryImages = [];
-  let storyImagesData = [];
-  let viewerImages = [];
+  /* ── Image Path Generation ── */
+  // [핵심 최적화] 이미지 존재 여부를 네트워크로 확인하지 않고
+  // config에서 명시한 개수만큼 경로를 즉시 생성합니다.
+  // 브라우저의 lazy loading이 실제 로드를 담당합니다.
+  function buildImagePaths(folder, count) {
+    const paths = [];
+    for (let i = 1; i <= count; i++) {
+      paths.push(`images/${folder}/${i}.jpg`);
+    }
+    return paths;
+  }
 
-  // [속도 개선] 기존: 1번→2번→3번 순차 탐색 (27장이면 27번 왕복 대기)
-  // 변경: 1~50번을 한꺼번에 병렬 요청 → 결과를 번호 순서대로 정렬
-  // 연속 3번 실패 로직 대신, 모든 요청을 동시에 보내고 성공한 것만 추려냄
-  function loadImagesFromFolder(folder, maxAttempts = 50) {
+  // [폴백] config에 개수가 없을 때만 사용하는 병렬 탐색
+  // maxAttempts를 줄이고 연속 실패 조기 종료 추가
+  function detectImageCount(folder, maxAttempts = 35) {
     const promises = [];
     for (let i = 1; i <= maxAttempts; i++) {
       const path = `images/${folder}/${i}.jpg`;
@@ -56,9 +62,7 @@
     const curtain = $('#curtain');
 
     if (CONFIG.useCurtain === false) {
-      if (curtain) {
-        curtain.style.display = 'none';
-      }
+      if (curtain) curtain.style.display = 'none';
       initPetals();
       return;
     }
@@ -67,8 +71,7 @@
     const btn = $('#curtain-open');
 
     if (names) {
-      names.textContent =
-        CONFIG.groom.fullName + ' & ' + CONFIG.bride.fullName;
+      names.textContent = CONFIG.groom.fullName + ' & ' + CONFIG.bride.fullName;
     }
 
     if (btn) {
@@ -157,9 +160,7 @@
       const b = CONFIG.bride;
 
       const makeName = (cfg, isDeceased) => {
-        return isDeceased
-          ? `<span class="deceased">${cfg}</span>`
-          : cfg;
+        return isDeceased ? `<span class="deceased">${cfg}</span>` : cfg;
       };
 
       parents.innerHTML = `
@@ -201,7 +202,6 @@
     for (let i = 0; i < startDow; i++) {
       html += '<span class="calendar__day is-empty"></span>';
     }
-
     for (let day = 1; day <= lastDay; day++) {
       const cls = day === d ? ' is-today' : '';
       html += `<span class="calendar__day${cls}">${day}</span>`;
@@ -263,6 +263,7 @@
   }
 
   /* ── Story ── */
+  // [핵심 최적화] 이미지 로드 완료를 기다리지 않고 즉시 렌더링
   async function initStory() {
     const title = $('#story-title');
     const text = $('#story-text');
@@ -277,22 +278,34 @@
     const hasStoryText =
       Boolean(CONFIG.story?.title?.trim()) || Boolean(CONFIG.story?.content?.trim());
 
-    container.innerHTML =
-      '<div class="section-loading"><span class="section-loading__dot"></span><span class="section-loading__dot"></span><span class="section-loading__dot"></span></div>';
+    // config에 storyCount가 있으면 즉시 렌더링, 없으면 탐색
+    let storyImagePaths;
+    if (CONFIG.images && CONFIG.images.storyCount > 0) {
+      storyImagePaths = buildImagePaths('story', CONFIG.images.storyCount);
+      renderStory(storyImagePaths, container, section, hasStoryText);
+    } else {
+      // 로딩 스피너만 잠깐 표시 후 비동기 탐색
+      container.innerHTML =
+        '<div class="section-loading"><span class="section-loading__dot"></span><span class="section-loading__dot"></span><span class="section-loading__dot"></span></div>';
+      storyImagePaths = await detectImageCount('story');
+      renderStory(storyImagePaths, container, section, hasStoryText);
+    }
 
-    storyImagesData = await loadImagesFromFolder('story');
+    return storyImagePaths;
+  }
 
-    if (!hasStoryText && storyImagesData.length === 0) {
+  function renderStory(paths, container, section, hasStoryText) {
+    if (!hasStoryText && paths.length === 0) {
       if (section) section.style.display = 'none';
       return;
     }
 
-    if (storyImagesData.length > 0) {
-      container.innerHTML = storyImagesData
+    if (paths.length > 0) {
+      container.innerHTML = paths
         .map(
           (src, i) => `
           <div class="story__img-card anim-scale-target" data-index="${i}">
-            <img src="${src}" alt="우리의 이야기 ${i + 1}" loading="lazy" />
+            <img src="${src}" alt="우리의 이야기 ${i + 1}" loading="lazy" decoding="async" />
           </div>
           `
         )
@@ -301,7 +314,7 @@
       container.addEventListener('click', (e) => {
         const item = e.target.closest('.story__img-card');
         if (item) {
-          viewerImages = storyImagesData;
+          viewerImages = paths;
           openViewer(+item.dataset.index);
         }
       });
@@ -313,25 +326,39 @@
   }
 
   /* ── Gallery ── */
+  // [핵심 최적화] 이미지 로드 완료를 기다리지 않고 즉시 렌더링
   async function initGallery() {
     const grid = $('#gallery-grid');
     const section = $('#gallery');
     if (!grid) return;
 
-    grid.innerHTML = '<div class="section-loading"><span class="section-loading__dot"></span><span class="section-loading__dot"></span><span class="section-loading__dot"></span></div>';
+    let galleryPaths;
 
-    galleryImages = await loadImagesFromFolder('gallery');
+    // config에 galleryCount가 있으면 즉시 렌더링
+    if (CONFIG.images && CONFIG.images.galleryCount > 0) {
+      galleryPaths = buildImagePaths('gallery', CONFIG.images.galleryCount);
+      renderGallery(galleryPaths, grid, section);
+    } else {
+      grid.innerHTML =
+        '<div class="section-loading"><span class="section-loading__dot"></span><span class="section-loading__dot"></span><span class="section-loading__dot"></span></div>';
+      galleryPaths = await detectImageCount('gallery');
+      renderGallery(galleryPaths, grid, section);
+    }
 
-    if (galleryImages.length === 0) {
+    return galleryPaths;
+  }
+
+  function renderGallery(paths, grid, section) {
+    if (paths.length === 0) {
       if (section) section.style.display = 'none';
       return;
     }
 
-    grid.innerHTML = galleryImages
+    grid.innerHTML = paths
       .map(
         (src, i) => `
       <div class="gallery__item" data-index="${i}">
-        <img src="${src}" alt="갤러리 사진 ${i + 1}" loading="lazy" />
+        <img src="${src}" alt="갤러리 사진 ${i + 1}" loading="lazy" decoding="async" />
       </div>
     `
       )
@@ -340,7 +367,7 @@
     grid.addEventListener('click', (e) => {
       const item = e.target.closest('.gallery__item');
       if (item) {
-        viewerImages = galleryImages;
+        viewerImages = paths;
         openViewer(+item.dataset.index);
       }
     });
@@ -349,14 +376,7 @@
   }
 
   /* ── Photo Viewer ── */
-  /*
-   * [버그 수정] 핵심 문제:
-   * 기존 코드는 track에 transform: translateX(-N*100%)를 적용했는데,
-   * track의 width가 뷰어 전체 width와 같아서 각 slide의 min-width:100%가
-   * track 기준으로 계산되어 슬라이드 간 이동이 제대로 동작하지 않았음.
-   * → 각 slide를 절대 위치(position:absolute)로 배치하고
-   *   window.innerWidth를 기준으로 픽셀 단위 translate 적용으로 수정.
-   */
+  let viewerImages = [];
   let viewerIdx = 0;
   let touchStartX = 0;
   let touchDeltaX = 0;
@@ -366,7 +386,6 @@
     const track = $('#viewer-track');
     if (!track) return;
 
-    // track을 relative 컨테이너로 설정
     track.style.position = 'relative';
     track.style.width = '100%';
     track.style.height = '100%';
@@ -385,7 +404,7 @@
         transform: translateX(${i * 100}vw);
         will-change: transform;
       ">
-        <img src="${src}" alt="" loading="lazy" style="
+        <img src="${src}" alt="" loading="lazy" decoding="async" style="
           max-width: 100%;
           max-height: 85vh;
           object-fit: contain;
@@ -406,7 +425,6 @@
     if (!viewer || viewerImages.length === 0) return;
 
     buildViewerSlides();
-
     viewer.classList.add('is-active');
     viewer.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
@@ -416,7 +434,6 @@
   function closeViewer() {
     const viewer = $('#viewer');
     if (!viewer) return;
-    // aria-hidden 경고 방지: 닫기 전에 포커스를 viewer 바깥으로 이동
     document.body.focus();
     viewer.classList.remove('is-active');
     viewer.setAttribute('aria-hidden', 'true');
@@ -433,16 +450,13 @@
     if (idx >= total) idx = total - 1;
     viewerIdx = idx;
 
-    // 각 슬라이드를 개별적으로 이동
     const slides = track.querySelectorAll('.viewer__slide');
     slides.forEach((slide, i) => {
       slide.style.transition = animate ? 'transform 0.3s ease' : 'none';
       slide.style.transform = `translateX(${(i - idx) * 100}vw)`;
     });
 
-    if (counter) {
-      counter.textContent = `${idx + 1} / ${total}`;
-    }
+    if (counter) counter.textContent = `${idx + 1} / ${total}`;
   }
 
   function initViewer() {
@@ -468,7 +482,6 @@
       touchStartX = e.touches[0].clientX;
       touchDeltaX = 0;
       isSwiping = true;
-      // 터치 중에는 transition 제거
       const slides = track.querySelectorAll('.viewer__slide');
       slides.forEach(s => s.style.transition = 'none');
     }, { passive: true });
@@ -539,12 +552,8 @@
     const groomBody = $('#acc-groom-body');
     const brideBody = $('#acc-bride-body');
 
-    if (groomBody) {
-      groomBody.innerHTML = renderAccounts(CONFIG.accounts.groom);
-    }
-    if (brideBody) {
-      brideBody.innerHTML = renderAccounts(CONFIG.accounts.bride);
-    }
+    if (groomBody) groomBody.innerHTML = renderAccounts(CONFIG.accounts.groom);
+    if (brideBody) brideBody.innerHTML = renderAccounts(CONFIG.accounts.bride);
 
     $$('.accordion__toggle').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -628,7 +637,6 @@
   let scrollObserver = null;
 
   function initScrollAnimations() {
-    // [버그 수정] 갤러리/스토리 로딩 완료 후에 호출되므로 타이밍 문제 없음
     const targets = $$('.anim-target, .gallery__item, .story__img-card');
     if (!targets.length) return;
 
@@ -641,7 +649,7 @@
           }
         });
       },
-      { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
+      { threshold: 0.1, rootMargin: '0px 0px -20px 0px' }
     );
 
     targets.forEach((el) => scrollObserver.observe(el));
@@ -741,15 +749,8 @@
     const btn = $('#btn-kakao-share');
     const share = CONFIG.kakaoShare;
 
-    if (!btn) {
-      console.warn('[KakaoShare] 버튼을 찾지 못했습니다.');
-      return;
-    }
-
-    if (!share || !share.appKey) {
-      console.warn('[KakaoShare] kakaoShare 설정 또는 appKey가 없습니다.');
-      return;
-    }
+    if (!btn) return;
+    if (!share || !share.appKey) return;
 
     btn.addEventListener('click', () => {
       try {
@@ -785,12 +786,14 @@
         });
       } catch (error) {
         console.error('[KakaoShare] 공유 실패:', error);
-        alert('카카오톡 공유 실행 중 문제가 발생했습니다. 도메인 설정과 링크 설정을 확인해주세요.');
+        alert('카카오톡 공유 실행 중 문제가 발생했습니다.');
       }
     });
   }
 
   /* ── Init ── */
+  // [핵심 최적화] 갤러리/스토리를 동기 즉시 렌더링하고 스크롤 애니메이션도 즉시 초기화.
+  // config.images에 개수가 명시된 경우 네트워크 탐색 없이 완전 즉시 렌더링.
   async function init() {
     initMeta();
     initCurtain();
@@ -803,15 +806,19 @@
     initAccount();
     initKakaoShare();
 
-    // [버그 수정] 갤러리·스토리 로딩이 완전히 끝난 후 스크롤 애니메이션 초기화
-    // 기존: setTimeout(initScrollAnimations, 200) — 로딩 완료 전에 실행될 수 있어 버그
-    await Promise.all([
-      initStory(),
-      initGallery(),
-    ]);
-
-    // 모든 이미지 로딩 완료 후 애니메이션 관찰 시작
-    initScrollAnimations();
+    if (CONFIG.images && CONFIG.images.galleryCount > 0 && CONFIG.images.storyCount !== undefined) {
+      // 이미지 개수가 명시된 경우: 완전 동기 즉시 렌더링
+      initStory();
+      initGallery();
+      // requestAnimationFrame으로 DOM 업데이트 후 애니메이션 관찰 시작
+      requestAnimationFrame(() => {
+        requestAnimationFrame(initScrollAnimations);
+      });
+    } else {
+      // 개수 미명시 시: 비동기 탐색 (기존 방식 유지)
+      await Promise.all([initStory(), initGallery()]);
+      initScrollAnimations();
+    }
   }
 
   if (document.readyState === 'loading') {

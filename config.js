@@ -17,7 +17,15 @@ const CONFIG = {
   // ── 초대장 열기 ──
   useCurtain: true,
 
-  // ── 메인 (히어로) ──
+  // ── [성능 최적화] 이미지 개수 명시 ──
+  // 이 값을 설정하면 네트워크 탐색 없이 즉시 렌더링됩니다.
+  // 이미지를 추가/삭제할 때 이 숫자도 같이 바꿔주세요.
+  images: {
+    galleryCount: 27,  // images/gallery/ 에 있는 사진 수
+    storyCount: 1,     // images/story/ 에 있는 사진 수
+  },
+
+  // ── 마인 (히어로) ──
   groom: {
     name: "경일",
     lastName: "민",
