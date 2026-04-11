@@ -300,9 +300,9 @@
       container.innerHTML = storyImagesData
         .map(
           (src, i) => `
-          <div class="story__img-card anim-scale-target" data-index="${i}">
-            <img src="${src}" alt="우리의 이야기 ${i + 1}" loading="lazy" />
-          </div>
+            <div class="story__img-card anim-scale-target" data-index="${i}">
+              <img src="${src}" alt="우리의 이야기 ${i + 1}" loading="lazy" />
+            </div>
           `
         )
         .join('');
@@ -371,26 +371,26 @@
 
     track.innerHTML = viewerImages
       .map(
-        (src) => `
-      <div class="viewer__slide">
-        <img src="${src}" alt="" loading="lazy" />
-      </div>
-    `
+        (src, i) => `
+        <div class="viewer__slide">
+          <img
+            src="${src}"
+            alt="확대 사진 ${i + 1}"
+            loading="${i === index ? 'eager' : 'lazy'}"
+            decoding="async"
+          />
+        </div>
+      `
       )
       .join('');
 
     viewer.classList.add('is-active');
     viewer.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
-    goToSlide(viewerIdx, false);
-  }
 
-  function closeViewer() {
-    const viewer = $('#viewer');
-    if (!viewer) return;
-    viewer.classList.remove('is-active');
-    viewer.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
+    requestAnimationFrame(() => {
+      goToSlide(viewerIdx, false);
+    });
   }
 
   function goToSlide(idx, animate = true) {
